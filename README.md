@@ -21,3 +21,6 @@ Open browser at `http://localhost:3000`
 ```bash
 docker-compose down
 ```
+
+## 🌐 Live Demo
+Frontend: https://your-vercel-url.vercel.app
