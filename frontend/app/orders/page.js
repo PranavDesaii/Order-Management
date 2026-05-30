@@ -12,6 +12,7 @@ export default function OrdersList() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [newOrderAlert, setNewOrderAlert] = useState(false);
 
   const fetchOrders = async (pageNum = 1) => {
     if (!storeId) return;
@@ -30,12 +31,13 @@ export default function OrdersList() {
 
   useEffect(() => {
     if (!searched || !storeId) return;
-
     const socket = getSocket();
     joinStore(parseInt(storeId));
 
     socket.on('new_order', (newOrder) => {
       setOrders((prev) => [newOrder, ...prev]);
+      setNewOrderAlert(true);
+      setTimeout(() => setNewOrderAlert(false), 3000);
     });
 
     socket.on('order_updated', (updatedOrder) => {
@@ -56,63 +58,89 @@ export default function OrdersList() {
     fetchOrders(1);
   };
 
-  const handlePageChange = (newPage) => {
-    setPage(newPage);
-    fetchOrders(newPage);
-  };
-
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Orders List</h1>
+    <div className="min-h-screen bg-gray-50 py-10">
+      <div className="max-w-2xl mx-auto px-4">
 
-      <form onSubmit={handleSearch} className="flex gap-2 mb-6">
-        <input
-          type="number"
-          value={storeId}
-          onChange={(e) => setStoreId(e.target.value)}
-          className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Enter store ID"
-          required
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
-        >
-          Search
-        </button>
-      </form>
-
-      {loading && <p className="text-gray-500 text-sm">Loading...</p>}
-
-      {!loading && searched && orders.length === 0 && (
-        <p className="text-gray-500 text-sm">No orders found for this store.</p>
-      )}
-
-      {orders.map((order) => (
-        <OrderCard key={order.id} order={order} />
-      ))}
-
-      {pagination && pagination.pages > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
-          <button
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page === 1}
-            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <span className="px-3 py-1 text-sm">
-            Page {page} of {pagination.pages}
-          </span>
-          <button
-            onClick={() => handlePageChange(page + 1)}
-            disabled={page === pagination.pages}
-            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
-          >
-            Next
-          </button>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Orders List</h1>
+          <p className="text-gray-500 mt-1">Search and manage orders by store</p>
         </div>
-      )}
+
+        {/* Real-time alert */}
+        {newOrderAlert && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 flex items-center gap-3 animate-pulse">
+            <span className="text-green-600">⚡</span>
+            <p className="text-green-800 text-sm font-medium">New order received in real-time!</p>
+          </div>
+        )}
+
+        {/* Search */}
+        <div className="bg-white rounded-2xl shadow-sm border p-4 mb-6">
+          <form onSubmit={handleSearch} className="flex gap-3">
+            <input
+              type="number"
+              value={storeId}
+              onChange={(e) => setStoreId(e.target.value)}
+              className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter store ID to search orders"
+              required
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+            >
+              Search
+            </button>
+          </form>
+        </div>
+
+        {/* Loading */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-gray-500 text-sm">Loading orders...</p>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && searched && orders.length === 0 && (
+          <div className="text-center py-16 bg-white rounded-2xl border">
+            <span className="text-5xl">📭</span>
+            <p className="text-gray-500 mt-4 font-medium">No orders found for this store</p>
+            <p className="text-gray-400 text-sm mt-1">Try a different store ID</p>
+          </div>
+        )}
+
+        {/* Orders */}
+        {!loading && orders.map((order) => (
+          <OrderCard key={order.id} order={order} />
+        ))}
+
+        {/* Pagination */}
+        {pagination && pagination.pages > 1 && (
+          <div className="flex justify-center items-center gap-3 mt-6">
+            <button
+              onClick={() => { setPage(page - 1); fetchOrders(page - 1); }}
+              disabled={page === 1}
+              className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-gray-50 transition"
+            >
+              ← Prev
+            </button>
+            <span className="text-sm text-gray-600 bg-white border rounded-xl px-4 py-2">
+              Page {page} of {pagination.pages}
+            </span>
+            <button
+              onClick={() => { setPage(page + 1); fetchOrders(page + 1); }}
+              disabled={page === pagination.pages}
+              className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-gray-50 transition"
+            >
+              Next →
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

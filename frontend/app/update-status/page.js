@@ -8,6 +8,13 @@ export default function UpdateStatus() {
   const [status, setStatus] = useState('PREPARING');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const statuses = [
+    { value: 'PLACED', label: 'Placed', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    { value: 'PREPARING', label: 'Preparing', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+    { value: 'COMPLETED', label: 'Completed', color: 'bg-green-100 text-green-700 border-green-200' },
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,9 +23,11 @@ export default function UpdateStatus() {
 
     try {
       const order = await updateOrderStatus(parseInt(orderId), status);
+      setIsSuccess(true);
       setMessage(`Order #${order.id} status updated to ${order.status}!`);
       setOrderId('');
     } catch (err) {
+      setIsSuccess(false);
       setMessage(err.response?.data?.error || 'Something went wrong');
     } finally {
       setLoading(false);
@@ -26,49 +35,83 @@ export default function UpdateStatus() {
   };
 
   return (
-    <div className="max-w-lg mx-auto mt-10 p-6 bg-white rounded-xl shadow">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Update Order Status</h1>
+    <div className="min-h-screen bg-gray-50 py-10">
+      <div className="max-w-lg mx-auto px-4">
 
-      {message && (
-        <div className={`p-3 rounded mb-4 text-sm ${message.includes('updated') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {message}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
-          <input
-            type="number"
-            value={orderId}
-            onChange={(e) => setOrderId(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter order ID"
-            required
-          />
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Update Status</h1>
+          <p className="text-gray-500 mt-1">Change the status of an existing order</p>
         </div>
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        {/* Alert */}
+        {message && (
+          <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 ${isSuccess ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+            <span className="text-xl">{isSuccess ? '✅' : '❌'}</span>
+            <p className={`text-sm font-medium ${isSuccess ? 'text-green-800' : 'text-red-800'}`}>
+              {message}
+            </p>
+          </div>
+        )}
+
+        {/* Form Card */}
+        <div className="bg-white rounded-2xl shadow-sm border p-6">
+
+          {/* Order ID */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Order ID
+            </label>
+            <input
+              type="number"
+              value={orderId}
+              onChange={(e) => setOrderId(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              placeholder="Enter order ID (e.g. 1)"
+              required
+            />
+          </div>
+
+          {/* Status Selection */}
+          <div className="mb-8">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Select New Status
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {statuses.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => setStatus(s.value)}
+                  className={`p-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                    status === s.value
+                      ? s.color + ' border-current scale-105'
+                      : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
-            <option value="PLACED">PLACED</option>
-            <option value="PREPARING">PREPARING</option>
-            <option value="COMPLETED">COMPLETED</option>
-          </select>
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Updating...
+              </>
+            ) : (
+              'Update Status'
+            )}
+          </button>
         </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Updating...' : 'Update Status'}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
